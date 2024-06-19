@@ -6,7 +6,7 @@
     "variable": "customerId",
     "target": "_blank",
     "external": true,
-    "icon": "cog"
+    "icon": "key"
   },
   {
     "label": "M365 Portal",
