@@ -48,13 +48,6 @@ const Offcanvas = (row, rowIndex, formatExtraData) => {
         ]}
         actions={[
           {
-              icon: <FontAwesomeIcon icon={faEdit} className="me-2" />,
-              label: ' Edit application in Intune',
-              color: 'info',
-              modal: true,
-              modalUrl: `https://intune.microsoft.com/#view/Microsoft_Intune_Apps/SettingsMenu/~/0/appId/!id`
-          },
-          {
             icon: <FontAwesomeIcon icon={faUser} />,
             label: ' Assign to All Users',
             color: 'info',
