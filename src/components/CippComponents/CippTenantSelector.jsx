@@ -8,6 +8,7 @@ import {
   GlobeAltIcon,
   ServerIcon,
   UsersIcon,
+  KeyIcon
 } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
@@ -186,6 +187,11 @@ export const CippTenantSelector = (props) => {
           "onPremisesLastPasswordSyncDateTime",
         ]}
         actions={[
+          {
+            label: "PIM",
+            link: `https://entra.microsoft.com/#view/Microsoft_Azure_PIMCommon/CommonMenuBlade/~/quickStart/Microsoft_Azure_PIMCommon/CommonMenuBlade`,
+            icon: <KeyIcon />,
+          },
           {
             label: "M365 Admin Portal",
             link: `https://admin.microsoft.com/Partner/BeginClientSession.aspx?CTID=${currentTenant?.addedFields?.customerId}&CSDEST=o365admincenter`,
