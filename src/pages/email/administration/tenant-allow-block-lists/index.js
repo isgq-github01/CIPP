@@ -16,6 +16,7 @@ const Page = () => {
       data: {
         Entries: "Value",
         ListType: "ListType",
+        ListSubType: "ListSubType"
       },
       confirmText: "Are you sure you want to delete?",
       color: "danger",
