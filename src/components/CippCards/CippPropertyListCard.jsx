@@ -152,8 +152,11 @@ export const CippPropertyListCard = (props) => {
                 key={`${item.label}-${index}-ActionList-OffCanvas`}
                 icon={<SvgIcon fontSize="small">{item.icon}</SvgIcon>}
                 label={item.label}
-                onClick={() => {
-                  setActionData({
+                onClick={
+                item.link
+                ? () => window.open(item.link, "_blank")
+                : () => {
+                setActionData({
                     data: data,
                     action: item,
                     ready: true,
