@@ -64,7 +64,7 @@ export const CippTenantSelector = (props) => {
   }, [currentTenant?.value]);
 
   useEffect(() => {
-    if (tenant && currentTenant?.value) {
+    if (tenant && currentTenant?.value && currentTenant?.value !== 'AllTenants') {
       tenantDetails.refetch();
     }
   }, [tenant, offcanvasVisible]);
