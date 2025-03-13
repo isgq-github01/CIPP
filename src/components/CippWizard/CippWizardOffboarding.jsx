@@ -192,7 +192,7 @@ export const CippWizardOffboarding = (props) => {
               <CippFormComponent
                 sx={{ m: 1 }}
                 name="OnedriveAccess"
-                label="Grant Onedrive Full Access"
+                label="Grant OneDrive Full Access"
                 type="autoComplete"
                 placeholder="Leave blank if not needed"
                 formControl={formControl}

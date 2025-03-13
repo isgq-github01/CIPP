@@ -161,7 +161,7 @@
     "mappingRequired": false
   },
   {
-    "name": "Halo PSA Ticketing",
+    "name": "HaloPSA Ticketing",
     "id": "HaloPSA",
     "type": "HaloPSA",
     "cat": "Ticketing",
