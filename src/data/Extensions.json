@@ -130,7 +130,7 @@
     "mappingRequired": false
   },
   {
-    "name": "Halo PSA Ticketing",
+    "name": "HaloPSA Ticketing",
     "id": "HaloPSA",
     "type": "HaloPSA",
     "cat": "Ticketing",
@@ -141,7 +141,7 @@
     "links": [
       {
         "name": "HaloPSA Documentation",
-        "url": "https://halopsa.com/guides/"
+        "url": "https://usehalo.com/halopsa/guides/"
       }
     ],
     "SettingOptions": [
