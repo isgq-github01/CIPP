@@ -27,6 +27,9 @@ export const CippTenantSelector = (props) => {
     url: "/api/listTenants",
     data: { AllTenantSelector: true },
     queryKey: "TenantSelector",
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    keepPreviousData: true,
   });
 
   const [currentTenant, setSelectedTenant] = useState(null);
