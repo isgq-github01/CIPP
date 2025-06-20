@@ -19,18 +19,19 @@ export const CippWizardGroupTemplates = (props) => {
   ];
   useEffect(() => {
     if (watcher?.value) {
+      console.log(watcher);
       formControl.setValue("groupType", watcher.addedFields.groupType);
       formControl.setValue("Displayname", watcher.addedFields.Displayname);
       formControl.setValue("Description", watcher.addedFields.Description);
       formControl.setValue("username", watcher.addedFields.username);
       formControl.setValue("allowExternal", watcher.addedFields.allowExternal);
-      formControl.setValue("MembershipRules", watcher.addedFields.MembershipRules);
+      formControl.setValue("membershipRules", watcher.addedFields.membershipRules);
     }
   }, [watcher]);
   return (
     <Stack spacing={3}>
       <Grid container spacing={3}>
-        <Grid item size={12}>
+        <Grid size={12}>
           <CippFormComponent
             type="autoComplete"
             name="TemplateList"
@@ -51,12 +52,13 @@ export const CippWizardGroupTemplates = (props) => {
                 Description: "description",
                 username: "username",
                 allowExternal: "allowExternal",
-                MembershipRules: "membershipRules",
+                membershipRules: "membershipRules",
               },
+              showRefresh: true,
             }}
           />
         </Grid>
-        <Grid item size={12}>
+        <Grid size={12}>
           <CippFormComponent
             type="radio"
             name="groupType"
@@ -66,7 +68,7 @@ export const CippWizardGroupTemplates = (props) => {
             validators={{ required: "Please select a group type" }}
           />
         </Grid>
-        <Grid item size={12}>
+        <Grid size={12}>
           <CippFormComponent
             type="textField"
             name="Displayname"
@@ -75,7 +77,7 @@ export const CippWizardGroupTemplates = (props) => {
             validators={{ required: "Group display name is required" }}
           />
         </Grid>
-        <Grid item size={12}>
+        <Grid size={12}>
           <CippFormComponent
             type="textField"
             name="Description"
@@ -83,7 +85,7 @@ export const CippWizardGroupTemplates = (props) => {
             formControl={formControl}
           />
         </Grid>
-        <Grid item size={12}>
+        <Grid size={12}>
           <CippFormComponent
             type="textField"
             name="username"
@@ -91,37 +93,53 @@ export const CippWizardGroupTemplates = (props) => {
             formControl={formControl}
           />
         </Grid>
-        <Grid item size={12}>
-          <CippFormCondition
-            field="groupType"
-            compareType="is"
-            compareValue="distribution"
-            formControl={formControl}
-          >
+        <CippFormCondition
+          field="groupType"
+          compareType="is"
+          compareValue="distribution"
+          formControl={formControl}
+        >
+          <Grid size={12}>
             <CippFormComponent
               type="switch"
               name="allowExternal"
               label="Allow external emails to the group"
               formControl={formControl}
             />
-          </CippFormCondition>
-        </Grid>
-        <Grid item size={12}>
-          <CippFormCondition
-            field="groupType"
-            compareType="contains"
-            compareValue={"dynamic"}
-            formControl={formControl}
-          >
+          </Grid>
+        </CippFormCondition>
+        <CippFormCondition
+          field="groupType"
+          compareType="is"
+          compareValue="dynamic"
+          formControl={formControl}
+        >
+          <Grid size={12}>
             <CippFormComponent
               type="textField"
-              name="MembershipRules"
+              name="membershipRules"
               label="Membership Rules"
               formControl={formControl}
               validators={{ required: "Membership rules are required" }}
             />
-          </CippFormCondition>
-        </Grid>
+          </Grid>
+        </CippFormCondition>
+        <CippFormCondition
+          field="groupType"
+          compareType="is"
+          compareValue="dynamicdistribution"
+          formControl={formControl}
+        >
+          <Grid size={12}>
+            <CippFormComponent
+              type="textField"
+              name="membershipRules"
+              label="Membership Rules"
+              formControl={formControl}
+              validators={{ required: "Membership rules are required" }}
+            />
+          </Grid>
+        </CippFormCondition>
       </Grid>
 
       <CippWizardStepButtons
