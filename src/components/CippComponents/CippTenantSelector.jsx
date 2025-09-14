@@ -53,7 +53,7 @@ export const CippTenantSelector = (props) => {
         label: "PIM",
         link: `https://entra.microsoft.com/isgq.com.au/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/aadgroup`,
         icon: <KeyIcon />,
-      }
+      },
       {
         key: "M365_Portal",
         label: "M365 Admin Portal",
