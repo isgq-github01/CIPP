@@ -125,6 +125,7 @@ export const CippTenantSelector = (props) => {
 
     // Default to all links enabled (final fallback)
     const defaultLinks = {
+      PIM: true,
       M365_Portal: true,
       Exchange_Portal: true,
       Entra_Portal: true,
