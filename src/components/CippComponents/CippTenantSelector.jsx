@@ -49,6 +49,12 @@ export const CippTenantSelector = (props) => {
     // Define all available portal actions with current tenant data
     const allPortalActions = [
       {
+        key: "PIM",
+        label: "PIM",
+        link: `https://entra.microsoft.com/isgq.com.au/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/aadgroup`,
+        icon: <KeyIcon />,
+      }
+      {
         key: "M365_Portal",
         label: "M365 Admin Portal",
         link: `https://admin.cloud.microsoft/?delegatedOrg=${currentTenant?.addedFields?.initialDomainName}`,
