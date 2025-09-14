@@ -1,5 +1,14 @@
 [
   {
+    "label": "PIM",
+    "name": "PIM",
+    "url": "https://entra.microsoft.com/isgq.com.au/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/aadgroup",
+    "variable": "customerId",
+    "target": "_blank",
+    "external": true,
+    "icon": "key"
+  },    
+  {
     "label": "M365 Portal",
     "name": "M365_Portal",
     "url": "https://admin.cloud.microsoft/?delegatedOrg=initialDomainName",
