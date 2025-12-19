@@ -213,7 +213,7 @@ export const CippTenantSelector = (props) => {
 
   // This effect handles when the URL parameter changes externally
   useEffect(() => {
-    if (!router.isReady || !tenantList.isSuccess) return;
+    if (!router.isReady || !tenantList.isSuccess || !settings.isInitialized) return;
 
     // Get the current tenant from URL or settings
     const urlTenant = router.query.tenantFilter || settings.currentTenant;
@@ -238,11 +238,11 @@ export const CippTenantSelector = (props) => {
         });
       }
     }
-  }, [router.isReady, router.query.tenantFilter, tenantList.isSuccess, settings.currentTenant]);
+  }, [router.isReady, router.query.tenantFilter, tenantList.isSuccess, settings.currentTenant, settings.isInitialized]);
 
   // This effect ensures the tenant filter parameter is included in the URL when missing
   useEffect(() => {
-    if (!router.isReady || !settings.currentTenant) return;
+    if (!router.isReady || !settings.isInitialized || !settings.currentTenant) return;
 
     // If the tenant parameter is missing from the URL but we have it in settings
     if (!router.query.tenantFilter && settings.currentTenant) {
@@ -256,7 +256,7 @@ export const CippTenantSelector = (props) => {
         { shallow: true }
       );
     }
-  }, [router.isReady, router.query, settings.currentTenant]);
+  }, [router.isReady, router.query, settings.currentTenant, settings.isInitialized]);
 
   useEffect(() => {
     if (tenant && currentTenant?.value && currentTenant?.value !== "AllTenants") {
