@@ -20,14 +20,14 @@ import {
   UsersIcon,
   KeyIcon
 } from "@heroicons/react/24/outline";
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
 import { CippOffCanvas } from "./CippOffCanvas";
 import { useSettings } from "../../hooks/use-settings";
 import { getCippError } from "../../utils/get-cipp-error";
 import { useQueryClient } from "@tanstack/react-query";
 
-export const CippTenantSelector = (props) => {
+export const CippTenantSelector = React.forwardRef((props, ref) => {
   const { width, allTenants = false, multiple = false, refreshButton, tenantButton } = props;
   //get the current tenant from SearchParams called 'tenantFilter'
   const router = useRouter();
@@ -333,6 +333,7 @@ export const CippTenantSelector = (props) => {
           </IconButton>
         )}
         <CippAutoComplete
+          ref={ref}
           disabled={tenantList.isFetching || tenantList.isError}
           isFetching={tenantList.isFetching}
           disableClearable={true}
@@ -404,7 +405,9 @@ export const CippTenantSelector = (props) => {
       />
     </>
   );
-};
+});
+
+CippTenantSelector.displayName = "CippTenantSelector";
 
 CippTenantSelector.propTypes = {
   allTenants: PropTypes.bool,
