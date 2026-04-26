@@ -18,6 +18,7 @@ import {
   GlobeAltIcon,
   ServerIcon,
   UsersIcon,
+  KeyIcon
 } from "@heroicons/react/24/outline";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
@@ -61,6 +62,12 @@ export const CippTenantSelector = React.forwardRef((props, ref) => {
   const filteredPortalActions = useMemo(() => {
     // Define all available portal actions with current tenant data
     const allPortalActions = [
+      {
+        key: "PIM",
+        label: "PIM",
+        link: `https://entra.microsoft.com/isgq.com.au/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/aadgroup`,
+        icon: <KeyIcon />,
+      },
       {
         key: "M365_Portal",
         label: "M365 Admin Portal",
@@ -132,6 +139,7 @@ export const CippTenantSelector = React.forwardRef((props, ref) => {
 
     // Default to all links enabled (final fallback)
     const defaultLinks = {
+      PIM: true,
       M365_Portal: true,
       Exchange_Portal: true,
       Entra_Portal: true,

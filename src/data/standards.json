@@ -40,6 +40,20 @@
     "recommendedBy": []
   },
   {
+    "name": "standards.EnableEWSOnSharedMailbox",
+    "cat": "Exchange Standards",
+    "tag": [],
+    "helpText": "Enable EWS on shared mailboxes, required for some backup products to continue functioning.",
+    "docsDescription": "Enable EWS on shared mailboxes, required for some backup products to continue functioning.",
+    "executiveText": "Enable EWS on shared mailboxes, required for some backup products to continue functioning.",
+    "label": "Enable EWS on Shared Mailboxes",
+    "disabledFeatures": { "report": true, "warn": true, "remediate": false },
+    "impact": "Medium Impact",
+    "impactColour": "warning",
+    "addedDate": "2026-04-15",
+    "powershellEquivalent": "Set-CASMailbox -Identity 'sharedmailbox@domain.com' -EwsEnabled $true & Set-OrganizationConfig -EwsEnabled $true"
+  },
+  {
     "name": "standards.DeployMailContact",
     "cat": "Exchange Standards",
     "tag": [],
@@ -1014,11 +1028,6 @@
         "name": "standards.DisableSelfServiceLicenses.Exclusions",
         "label": "License Ids to exclude from this standard",
         "required": false
-      },
-      {
-        "type": "switch",
-        "name": "standards.DisableSelfServiceLicenses.DisableTrials",
-        "label": "Disable starting trials on behalf of your organization"
       }
     ],
     "label": "Disable Self Service Licensing",
@@ -5573,7 +5582,7 @@
         "name": "transportRuleTemplate",
         "label": "Select Transport Rule Template",
         "api": {
-          "url": "/api/ListTransportRulesTemplates?noJson=true",
+          "url": "/api/ListTransportRulesTemplates",
           "labelField": "name",
           "valueField": "GUID",
           "queryKey": "ListTransportRulesTemplates"
@@ -5862,33 +5871,21 @@
     "name": "standards.DeployCheckChromeExtension",
     "cat": "Intune Standards",
     "tag": [],
-    "helpText": "Deploys the Check by CyberDrain browser extension via a Win32 script app in Intune for both Chrome and Edge browsers with configurable settings. Chrome ID: benimdeioplgkhanklclahllklceahbe, Edge ID: knepjpocdagponkonnbggpcnhnaikajg",
-    "docsDescription": "Creates an Intune Win32 script application that writes registry keys to install and configure the Check by CyberDrain browser extension on managed devices for both Google Chrome and Microsoft Edge browsers. Uses a PowerShell detection script to enforce configuration drift — when settings change in CIPP the app is automatically redeployed.",
-    "executiveText": "Automatically deploys the Check by CyberDrain browser extension across all company devices with configurable security and branding settings, ensuring consistent security monitoring and compliance capabilities. This extension provides enhanced security features and monitoring tools that help protect against threats while maintaining user productivity.",
+    "helpText": "Deploys the Check Chrome extension via Intune OMA-URI custom policies for both Chrome and Edge browsers with configurable settings. Chrome ID: benimdeioplgkhanklclahllklceahbe, Edge ID: knepjpocdagponkonnbggpcnhnaikajg",
+    "docsDescription": "Creates Intune OMA-URI custom policies that automatically install and configure the Check Chrome extension on managed devices for both Google Chrome and Microsoft Edge browsers. This ensures the extension is deployed consistently across all corporate devices with customizable settings.",
+    "executiveText": "Automatically deploys the Check browser extension across all company devices with configurable security and branding settings, ensuring consistent security monitoring and compliance capabilities. This extension provides enhanced security features and monitoring tools that help protect against threats while maintaining user productivity.",
     "addedComponent": [
-      {
-        "type": "switch",
-        "name": "standards.DeployCheckChromeExtension.showNotifications",
-        "label": "Show notifications",
-        "defaultValue": true
-      },
       {
         "type": "switch",
         "name": "standards.DeployCheckChromeExtension.enableValidPageBadge",
         "label": "Enable valid page badge",
-        "defaultValue": false
+        "defaultValue": true
       },
       {
         "type": "switch",
         "name": "standards.DeployCheckChromeExtension.enablePageBlocking",
         "label": "Enable page blocking",
         "defaultValue": true
-      },
-      {
-        "type": "switch",
-        "name": "standards.DeployCheckChromeExtension.forceToolbarPin",
-        "label": "Force pin extension to toolbar",
-        "defaultValue": false
       },
       {
         "type": "switch",
@@ -5901,14 +5898,13 @@
         "name": "standards.DeployCheckChromeExtension.customRulesUrl",
         "label": "Custom Rules URL",
         "placeholder": "https://YOUR-CIPP-SERVER-URL/rules.json",
-        "helperText": "Enter the URL for custom rules if you have them. This should point to a JSON file with the same structure as the rules.json used for CIPP reporting.",
         "required": false
       },
       {
         "type": "number",
         "name": "standards.DeployCheckChromeExtension.updateInterval",
         "label": "Update interval (hours)",
-        "defaultValue": 24
+        "defaultValue": 12
       },
       {
         "type": "switch",
@@ -5917,56 +5913,10 @@
         "defaultValue": false
       },
       {
-        "type": "switch",
-        "name": "standards.DeployCheckChromeExtension.enableGenericWebhook",
-        "label": "Enable generic webhook",
-        "defaultValue": false
-      },
-      {
-        "type": "textField",
-        "name": "standards.DeployCheckChromeExtension.webhookUrl",
-        "label": "Webhook URL",
-        "placeholder": "https://webhook.example.com/endpoint",
-        "required": false
-      },
-      {
-        "type": "autoComplete",
-        "multiple": true,
-        "creatable": true,
-        "required": false,
-        "name": "standards.DeployCheckChromeExtension.webhookEvents",
-        "label": "Webhook Events",
-        "placeholder": "e.g. pageBlocked, pageAllowed"
-      },
-      {
-        "type": "autoComplete",
-        "multiple": true,
-        "creatable": true,
-        "required": false,
-        "freeSolo": true,
-        "name": "standards.DeployCheckChromeExtension.urlAllowlist",
-        "label": "URL Allowlist",
-        "placeholder": "e.g. https://example.com/*",
-        "helperText": "Enter URLs to allowlist in the extension. Press enter to add each URL. Wildcards are allowed. This should be used for sites that are being blocked by the extension but are known to be safe."
-      },
-      {
-        "type": "switch",
-        "name": "standards.DeployCheckChromeExtension.domainSquattingEnabled",
-        "label": "Enable domain squatting detection",
-        "defaultValue": true
-      },
-      {
         "type": "textField",
         "name": "standards.DeployCheckChromeExtension.companyName",
         "label": "Company Name",
         "placeholder": "YOUR-COMPANY",
-        "required": false
-      },
-      {
-        "type": "textField",
-        "name": "standards.DeployCheckChromeExtension.companyURL",
-        "label": "Company URL",
-        "placeholder": "https://yourcompany.com",
         "required": false
       },
       {
@@ -5985,30 +5935,9 @@
       },
       {
         "type": "textField",
-        "name": "standards.DeployCheckChromeExtension.supportUrl",
-        "label": "Support URL",
-        "placeholder": "https://support.yourcompany.com",
-        "required": false
-      },
-      {
-        "type": "textField",
-        "name": "standards.DeployCheckChromeExtension.privacyPolicyUrl",
-        "label": "Privacy Policy URL",
-        "placeholder": "https://yourcompany.com/privacy",
-        "required": false
-      },
-      {
-        "type": "textField",
-        "name": "standards.DeployCheckChromeExtension.aboutUrl",
-        "label": "About URL",
-        "placeholder": "https://yourcompany.com/about",
-        "required": false
-      },
-      {
-        "type": "textField",
         "name": "standards.DeployCheckChromeExtension.primaryColor",
         "label": "Primary Color",
-        "placeholder": "#F77F00",
+        "placeholder": "#0044CC",
         "required": false
       },
       {
@@ -6020,7 +5949,7 @@
       },
       {
         "name": "AssignTo",
-        "label": "Who should this app be assigned to?",
+        "label": "Who should this policy be assigned to?",
         "type": "radio",
         "options": [
           { "label": "Do not assign", "value": "On" },
@@ -6037,7 +5966,7 @@
         "label": "Enter the custom group name if you selected 'Assign to Custom Group'. Wildcards are allowed."
       }
     ],
-    "label": "Deploy Check by CyberDrain Browser Extension",
+    "label": "Deploy Check Chrome Extension",
     "impact": "Low Impact",
     "impactColour": "info",
     "addedDate": "2025-09-18",
