@@ -66,7 +66,7 @@ export const CippTenantSelector = React.forwardRef((props, ref) => {
         key: "PIM",
         label: "PIM",
         link: `https://entra.microsoft.com/isgq.com.au/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/aadgroup`,
-        icon: <KeyIcon />,
+        icon: "KeyIcon",
       },
       {
         key: "M365_Portal",
