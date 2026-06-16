@@ -34,7 +34,7 @@ import DOMPurify from 'dompurify'
 import { getSignInErrorCodeTranslation } from './get-cipp-signin-errorcode-translation'
 import { CollapsibleChipList } from '../components/CippComponents/CollapsibleChipList'
 import countryList from '../data/countryList.json'
-import standardsData from '../data/standards.json'
+import { getStandards } from './standards-data'
 
 // Helper function to convert country codes to country names
 const getCountryNameFromCode = (countryCode) => {
@@ -152,7 +152,11 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
     )
   }
 
-  if (cellName === 'prohibitSendReceiveQuotaInBytes' || cellName === 'storageUsedInBytes') {
+  if (
+    cellName === 'prohibitSendReceiveQuotaInBytes' ||
+    cellName === 'storageUsedInBytes' ||
+    cellName === 'ArchiveSize'
+  ) {
     //convert bytes to GB
     const bytes = data
     if (bytes === null || bytes === undefined) {
@@ -468,8 +472,8 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
     if (!data?.startsWith('standards.')) return isText ? data : <span>{data}</span>
     const baseName = data.split('.').slice(0, -1).join('.')
     const label =
-      standardsData.find((s) => s.name === data)?.label ??
-      standardsData.find((s) => s.name === baseName)?.label ??
+      getStandards().find((s) => s.name === data)?.label ??
+      getStandards().find((s) => s.name === baseName)?.label ??
       data
     return label
   }
@@ -1022,7 +1026,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
   }
 
   // Internal CIPP navigation links
-  if ((cellName === 'cippLink') && typeof data === 'string') {
+  if (cellName === 'cippLink' && typeof data === 'string') {
     return isText ? (
       data
     ) : (
