@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import { CippIcons } from "../../utils/icon-registry";
 import {
   Accordion,
   AccordionSummary,
@@ -14,9 +15,8 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { ExpandMore, WarningAmber } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import { ApiPostCall } from "../../api/ApiCall";
+import { ApiGetCall, ApiPostCall } from "../../api/ApiCall";
 import { getListGraphBulkRequestRows } from "../../utils/getListGraphBulkRequestRows.js";
 import riskyPermissionsJson from "../../data/RiskyPermissions.json";
 
@@ -102,9 +102,9 @@ const summariseAccordionRisk = (metas) => {
   const list = metas.filter(Boolean);
   if (list.length === 0) return null;
   const worst = list.reduce((acc, m) =>
-    (RISK_ORDER[m.risk] ?? 0) > (RISK_ORDER[acc.risk] ?? 0) ? m : acc
+    (RISK_ORDER[m.suspicion] ?? 0) > (RISK_ORDER[acc.suspicion] ?? 0) ? m : acc
   );
-  return { count: list.length, worst: worst.risk };
+  return { count: list.length, worst: worst.suspicion };
 };
 
 const parseBulkSpBody = (entry) => {
@@ -125,7 +125,7 @@ const PermissionLine = ({
   riskMeta,
 }) => {
   const theme = useTheme();
-  const accent = riskMeta ? riskAccentColor(riskMeta.risk, theme) : null;
+  const accent = riskMeta ? riskAccentColor(riskMeta.suspicion, theme) : null;
   return (
     <ListItem
       sx={{
@@ -144,7 +144,7 @@ const PermissionLine = ({
             title={
               <Box sx={{ maxWidth: 380, py: 0.25 }}>
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                  {riskMeta.risk}
+                  {`Suspicion ${riskMeta.suspicion}, impact ${riskMeta.impact}`}
                   {riskMeta.name ? ` — ${riskMeta.name}` : ""}
                 </Typography>
                 <Typography variant="body2" component="p" sx={{ m: 0 }}>
@@ -156,9 +156,9 @@ const PermissionLine = ({
             <span>
               <Chip
                 size="small"
-                label={riskMeta.risk}
-                color={riskChipColor(riskMeta.risk)}
-                variant={riskMeta.risk === "Low" ? "outlined" : "filled"}
+                label={riskMeta.suspicion}
+                color={riskChipColor(riskMeta.suspicion)}
+                variant={riskMeta.suspicion === "Low" ? "outlined" : "filled"}
                 sx={{ cursor: "help", maxWidth: 120 }}
               />
             </span>
@@ -169,9 +169,10 @@ const PermissionLine = ({
       <ListItemText
         primary={primary}
         secondary={secondary || undefined}
-        primaryTypographyProps={{ variant: "body2", fontWeight: "medium" }}
-        secondaryTypographyProps={{ variant: "caption" }}
-      />
+        slotProps={{
+          primary: { variant: "body2", fontWeight: "medium" },
+          secondary: { variant: "caption" }
+        }} />
     </ListItem>
   );
 };
@@ -191,18 +192,32 @@ const ResourceAccordion = ({ title, resourceId, chipLabel, children, riskSummary
       }}
       disableGutters
     >
-      <AccordionSummary expandIcon={<ExpandMore />}>
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ width: "100%", pr: 1 }}>
+      <AccordionSummary
+        expandIcon={<CippIcons.ExpandMore />}
+        // summary is a centered ButtonBase, an unshrinkable row spills both edges
+        sx={{ "& .MuiAccordionSummary-content": { minWidth: 0 } }}
+      >
+        <Stack
+          direction="row"
+          spacing={2}
+          useFlexGap
+          sx={{
+            alignItems: "center",
+            width: "100%",
+            pr: 1,
+            flexWrap: "wrap",
+            rowGap: 1
+          }}>
           <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
           {riskSummary && (
             <Tooltip
-              title={`This API includes ${riskSummary.count} permission(s) listed in the risky-permissions set (highest: ${riskSummary.worst}).`}
+              title={`This API includes ${riskSummary.count} permission(s) listed in the risky-permissions set (highest suspicion: ${riskSummary.worst}).`}
             >
               <Chip
                 size="small"
-                icon={<WarningAmber sx={{ fontSize: 18 }} />}
+                icon={<CippIcons.WarningAmber sx={{ fontSize: 18 }} />}
                 label={`${riskSummary.worst} (${riskSummary.count})`}
                 color={riskChipColor(riskSummary.worst)}
                 variant={riskSummary.worst === "Low" ? "outlined" : "filled"}
@@ -210,7 +225,12 @@ const ResourceAccordion = ({ title, resourceId, chipLabel, children, riskSummary
               />
             </Tooltip>
           )}
-          <Chip size="small" label={resourceId} variant="outlined" sx={{ maxWidth: 260 }} />
+          <Chip
+            size="small"
+            label={resourceId}
+            variant="outlined"
+            sx={{ maxWidth: 260, minWidth: 0 }}
+          />
           {chipLabel != null && <Chip size="small" label={String(chipLabel)} />}
         </Stack>
       </AccordionSummary>
@@ -223,6 +243,32 @@ const CippEnterpriseAppPermissions = ({ servicePrincipalId, tenantFilter }) => {
   const permissionsBulk = ApiPostCall({ urlFromData: true });
   const resourcesBulk = ApiPostCall({ urlFromData: true });
   const resourcesFetchStarted = useRef(false);
+  // Copy of backend/Config/PermissionsTranslator.json, kept in sync by build/tools/Update-PermissionsTranslator.ps1.
+  const translatorRequest = ApiGetCall({
+    url: "/permissionsTranslator.json",
+    queryKey: "permissionsTranslator",
+    staleTime: Infinity,
+  });
+
+  const translator = useMemo(() => {
+    const byId = new Map();
+    const byOriginAndValue = new Map();
+    const delegatedByValue = new Map();
+    const rows = Array.isArray(translatorRequest.data) ? translatorRequest.data : [];
+    for (const row of rows) {
+      if (!row?.id) continue;
+      byId.set(String(row.id).toLowerCase(), row);
+      const value = String(row.value || "").toLowerCase();
+      const origin = String(row.origin || "").toLowerCase();
+      if (!value) continue;
+      byOriginAndValue.set(`${origin}|${value}`, row);
+      if (origin.startsWith("delegated")) {
+        if (!delegatedByValue.has(value)) delegatedByValue.set(value, []);
+        delegatedByValue.get(value).push(row);
+      }
+    }
+    return { byId, byOriginAndValue, delegatedByValue };
+  }, [translatorRequest.data]);
 
   useEffect(() => {
     resourcesFetchStarted.current = false;
@@ -285,7 +331,9 @@ const CippEnterpriseAppPermissions = ({ servicePrincipalId, tenantFilter }) => {
         tenantFilter,
         Requests: resourceIds.map((rid) => ({
           id: `sp-res-${rid}`,
-          url: `/servicePrincipals/${rid}?$select=id,displayName,appId,appRoles,oauth2PermissionScopes,publishedPermissionScopes`,
+          // ListGraphBulkRequest calls beta, where the scopes are publishedPermissionScopes; selecting
+          // the v1.0 name oauth2PermissionScopes fails the whole request.
+          url: `/servicePrincipals/${rid}?$select=id,displayName,appId,appRoles,publishedPermissionScopes`,
           method: "GET",
         })),
       },
@@ -322,23 +370,35 @@ const CippEnterpriseAppPermissions = ({ servicePrincipalId, tenantFilter }) => {
     return out;
   }, [grants]);
 
+  // The translator JSON leads; the resource service principal read from the tenant is the fallback.
   const resolveAppRole = (resourceId, appRoleId) => {
     const sp = resourceSpMap[resourceId];
     const role = sp?.appRoles?.find((r) => r.id === appRoleId);
+    const known = translator.byId.get(String(appRoleId).toLowerCase());
     return {
-      name: role?.value || appRoleId,
-      description: role?.description || null,
+      name: known?.value || role?.value || appRoleId,
+      description:
+        known?.description || known?.displayName || role?.description || role?.displayName || null,
     };
   };
 
-  const resolveDelegatedScope = (resourceId, scopeValue) => {
+  const resolveDelegatedScope = (resourceId, scopeValue, apiDisplayName) => {
     const sp = resourceSpMap[resourceId];
-    const scopes = sp?.oauth2PermissionScopes || sp?.publishedPermissionScopes || [];
+    const scopes = sp?.publishedPermissionScopes || sp?.oauth2PermissionScopes || [];
     const scope = scopes.find((s) => s.value === scopeValue);
+    const value = String(scopeValue).toLowerCase();
+    const candidates = translator.delegatedByValue.get(value) || [];
+    const known =
+      translator.byOriginAndValue.get(`delegated (${String(apiDisplayName || "").toLowerCase()})|${value}`) ||
+      (candidates.length === 1 ? candidates[0] : null);
     return {
       name: scopeValue,
       description:
-        scope?.userConsentDescription || scope?.adminConsentDescription || scope?.value || null,
+        known?.description ||
+        known?.displayName ||
+        scope?.adminConsentDescription ||
+        scope?.userConsentDescription ||
+        null,
     };
   };
 
@@ -385,7 +445,12 @@ const CippEnterpriseAppPermissions = ({ servicePrincipalId, tenantFilter }) => {
         <Typography variant="h6" sx={{ mb: 0.5 }}>
           Application permissions
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            color: "text.secondary",
+            mb: 2
+          }}>
           App roles assigned to this enterprise application (app-only), grouped by resource API.
         </Typography>
         {permLoading && <Skeleton variant="rectangular" height={80} />}
@@ -436,7 +501,12 @@ const CippEnterpriseAppPermissions = ({ servicePrincipalId, tenantFilter }) => {
         <Typography variant="h6" sx={{ mb: 0.5 }}>
           Delegated permissions
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            color: "text.secondary",
+            mb: 2
+          }}>
           OAuth2 delegated permission grants for this enterprise application, grouped by resource API.
         </Typography>
         {permLoading && <Skeleton variant="rectangular" height={80} />}
@@ -462,7 +532,7 @@ const CippEnterpriseAppPermissions = ({ servicePrincipalId, tenantFilter }) => {
                 {!resLoading && (
                   <List dense disablePadding>
                     {scopeList.map((scopeName, idx) => {
-                      const { description } = resolveDelegatedScope(rid, scopeName);
+                      const { description } = resolveDelegatedScope(rid, scopeName, title);
                       const riskMeta = lookupDelegatedRiskByScopeName(scopeName, title);
                       return (
                         <PermissionLine
