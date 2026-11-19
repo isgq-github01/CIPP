@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { CippIcons } from "../../utils/icon-registry";
 import { Button, Typography, Alert, Box, Stack } from "@mui/material";
 import { Grid } from "@mui/system";
 import { useForm } from "react-hook-form";
-import { Edit, Add } from "@mui/icons-material";
 import { CippOffCanvas } from "./CippOffCanvas";
 import CippFormComponent from "./CippFormComponent";
 import { CippApiResults } from "./CippApiResults";
@@ -34,7 +34,7 @@ export const CippPermissionSetDrawer = ({
   // Fetch existing template data in edit mode
   const templateInfo = ApiGetCall({
     url: templateId ? `/api/ExecAppPermissionTemplate?TemplateId=${templateId}` : null,
-    queryKey: templateId ? ["execAppPermissionTemplate", templateId, refetchKey] : null,
+    queryKey: templateId ? `execAppPermissionTemplate-${templateId}` : null,
     waiting: !!drawerVisible && !!isEditMode && !!templateId,
   });
 
@@ -54,7 +54,7 @@ export const CippPermissionSetDrawer = ({
   // API call for submit
   const updatePermissions = ApiPostCall({
     urlFromData: true,
-    relatedQueryKeys: ["ExecAppPermissionTemplate", "execAppPermissionTemplate"],
+    relatedQueryKeys: ["ExecAppPermissionTemplate", "execAppPermissionTemplate*"],
   });
 
   // Process template data for editing
@@ -136,8 +136,8 @@ export const CippPermissionSetDrawer = ({
       {!rowAction && (
         <PermissionButton
           onClick={() => setDrawerVisible(true)}
-          startIcon={isEditMode ? <Edit /> : <Add />}
-          requiredPermissions={requiredPermissions}
+          startIcon={isEditMode ? <CippIcons.Edit /> : <CippIcons.Add />}
+          {...(PermissionButton !== Button ? { requiredPermissions } : {})}
         >
           {buttonText}
         </PermissionButton>
@@ -148,7 +148,9 @@ export const CippPermissionSetDrawer = ({
         onClose={handleDrawerClose}
         size="xl"
       >
-        <Box sx={{ p: 3 }}>
+        {/* The drawer already pays contentPadding on a phone; 24px more on top of it, plus
+            each card's own gutters, leaves the form reading through a third of the screen. */}
+        <Box sx={{ p: { xs: 0, md: 3 } }}>
           <Stack spacing={3}>
             <Typography variant="body2">
               {isEditMode

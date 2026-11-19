@@ -1,9 +1,10 @@
 import { getCippFilterVariant } from '../../utils/get-cipp-filter-variant'
-import { getCippFormatting } from '../../utils/get-cipp-formatting'
+import { getCippFormatting, isCippDateColumn } from '../../utils/get-cipp-formatting'
+import { formatCellText } from './CippCellText'
 import { getCippTranslation } from '../../utils/get-cipp-translation'
 import { getCippColumnSize } from '../../utils/get-cipp-column-size'
-
-const skipRecursion = ['location', 'ScheduledBackupValues', 'Tenant']
+import { SKIP_RECURSION_KEYS as skipRecursion } from '../../utils/skip-recursion-keys'
+import { isTenantColumn, toTenantName } from '../../utils/tenant-display-names'
 
 // Number of rows to sample when measuring column content width.
 const MAX_SIZE_SAMPLE = 30
@@ -24,19 +25,6 @@ const CHIP_CHROME_PX = 45
 // DateTime columns render as relative time (e.g. "about 2 months ago"). Use a fixed
 // character length instead of measuring the raw ISO date string.
 const RELATIVE_TIME_CHARS = 20
-
-// Known datetime accessor names and pattern — must stay in sync with get-cipp-formatting.js
-const TIME_AGO_NAMES = new Set([
-  'ExecutedTime', 'ScheduledTime', 'Timestamp', 'timestamp', 'DateTime', 'LastRun',
-  'LastRefresh', 'createdDateTime', 'activatedDateTime', 'lastModifiedDateTime',
-  'endDateTime', 'ReceivedTime', 'Expires', 'updatedAt', 'createdAt', 'Received',
-  'Date', 'WhenCreated', 'WhenChanged', 'CreationTime', 'renewalDate',
-  'commitmentTerm.renewalConfiguration.renewalDate', 'purchaseDate', 'NextOccurrence',
-  'LastOccurrence', 'NotBefore', 'NotAfter', 'latestDataCollection',
-  'requestDate', 'reviewedDate', 'GeneratedAt',
-])
-const MATCH_DATE_TIME = /([dD]ate[tT]ime|[Ee]xpiration|[Tt]imestamp|[sS]tart[Dd]ate)/
-const isDateTimeColumn = (key) => TIME_AGO_NAMES.has(key) || MATCH_DATE_TIME.test(key)
 
 // Measure the pixel width a column needs based on its header and sampled cell values.
 // rawValues are the original data values (before formatting) — if they contain arrays or
@@ -111,7 +99,7 @@ const measureColumnSize = (header, valuesForColumn, rawValues, accessorKey) => {
   }
 
   // DateTime columns render as relative time — use a fixed width instead of the raw string.
-  if (accessorKey && isDateTimeColumn(accessorKey)) {
+  if (accessorKey && isCippDateColumn(accessorKey)) {
     const dtLen = Math.max(headerLen, RELATIVE_TIME_CHARS)
     const dtPx = Math.round(dtLen * CHAR_WIDTH + CELL_PADDING)
     const size = Math.max(minSize, Math.min(MAX_COL_SIZE, dtPx))
@@ -163,7 +151,7 @@ const resolveVariables = (columnName, dataSample) => {
       return resolved
     }
     return match // return original if no resolver found
-  })
+  });
 }
 
 const getAtPath = (obj, path) => {
@@ -191,6 +179,9 @@ const mergeKeys = (dataArray) => {
         return base
       }
       Object.keys(obj).forEach((key) => {
+        // API rows are untrusted input; never let a key walk up the prototype chain.
+        // Written as literal comparisons (not a Set lookup) so static analysis can see the guard.
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') return
         if (
           typeof obj[key] === 'object' &&
           obj[key] !== null &&
@@ -198,7 +189,7 @@ const mergeKeys = (dataArray) => {
           !skipRecursion.includes(key)
         ) {
           if (typeof base[key] === 'boolean') return // don't merge into a boolean
-          if (typeof base[key] !== 'object' || Array.isArray(base[key])) base[key] = {}
+          if (base[key] === null || typeof base[key] !== 'object' || Array.isArray(base[key])) base[key] = {}
           base[key] = mergeRecursive(obj[key], base[key])
         } else if (typeof obj[key] === 'boolean') {
           base[key] = obj[key]
@@ -207,6 +198,9 @@ const mergeKeys = (dataArray) => {
           base[key] = base[key]
         } else if (obj[key] !== undefined && obj[key] !== null) {
           base[key] = obj[key]
+        } else if (!(key in base)) {
+          // An empty value still makes a column, or a filter on it is silently dropped
+          base[key] = null
         }
       })
       return base
@@ -224,7 +218,7 @@ const mergeKeys = (dataArray) => {
 // Scanning the full dataset is O(n * columns) and dominates render time on large tables.
 const MAX_FILTER_SAMPLE = 50
 
-export const utilColumnsFromAPI = (dataArray) => {
+export const utilColumnsFromAPI = (dataArray, tenantNames = null) => {
   // Add safety check for dataArray
   if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
     return []
@@ -251,15 +245,28 @@ export const utilColumnsFromAPI = (dataArray) => {
         }
 
         // Build a value resolver usable by both accessorFn/Cell and the filter util
-        const resolveValue = (rowLike) =>
+        const readValue = (rowLike) =>
           accessorKey.includes('@odata') ? rowLike?.[accessorKey] : getAtPath(rowLike, accessorKey)
+        const resolveValue =
+          tenantNames && isTenantColumn(accessorKey)
+            ? (rowLike) => toTenantName(readValue(rowLike), tenantNames)
+            : readValue
 
         // Sample a small subset for filter heuristics instead of the full dataset.
         const valuesForColumn = filterSample
           .map((r) => resolveValue(r))
           .filter((v) => v !== undefined && v !== null)
 
-        const sampleValue = valuesForColumn.length ? valuesForColumn[0] : undefined
+        // A column empty across the sample still takes its type from the first row that has a value
+        const firstRowWithValue = valuesForColumn.length
+          ? undefined
+          : dataArray.find((r) => {
+              const v = resolveValue(r)
+              return v !== undefined && v !== null
+            })
+        const sampleValue = valuesForColumn.length
+          ? valuesForColumn[0]
+          : firstRowWithValue && resolveValue(firstRowWithValue)
 
         // Measure content width from formatted text values for this column.
         const textValues = valuesForColumn.map((v) => getCippFormatting(v, accessorKey, 'text'))
@@ -290,11 +297,12 @@ export const utilColumnsFromAPI = (dataArray) => {
             sampleValue,
             values: valuesForColumn,
             getValue: (row) => resolveValue(row),
-            dataArray: filterSample,
+            dataArray,
           }),
           Cell: ({ row }) => {
             const value = resolveValue(row.original)
-            return getCippFormatting(value, accessorKey)
+            const rendered = getCippFormatting(value, accessorKey)
+            return formatCellText(rendered, false)
           },
         }
 

@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import CippFormPage from "../../../../components/CippFormPages/CippFormPage";
-import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import { Layout as DashboardLayout } from "../../../../layouts/index";
 import { useForm, useWatch } from "react-hook-form";
 import CippFormComponent from "../../../../components/CippComponents/CippFormComponent";
 import { useSettings } from "../../../../hooks/use-settings";
@@ -8,10 +8,20 @@ import { Grid, darken, lighten, styled } from "@mui/system";
 import { CippPropertyListCard } from "../../../../components/CippCards/CippPropertyListCard";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import { getCippTranslation } from "../../../../utils/get-cipp-translation";
+import { ApiGetCall } from "../../../../api/ApiCall";
 
 const Page = () => {
   const userSettingsDefaults = useSettings();
   const tenantDomain = userSettingsDefaults?.currentTenant;
+
+  const integrationSettings = ApiGetCall({
+    url: "/api/ListExtensionsConfig",
+    queryKey: "ListExtensionsConfig",
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+  });
+  const providerName =
+    integrationSettings?.data?.ExternalCSP?.Enabled === true ? "your CSP provider" : "Sherweb";
 
   const formControl = useForm({
     mode: "onChange",
@@ -47,14 +57,14 @@ const Page = () => {
       <CippFormPage
         queryKey={"CippFormPage"}
         formControl={formControl}
-        title="Add Subscription"
-        backButtonTitle="CSP Licenses"
+        title="Subscription"
+        backButtonTitle="CSP License Management"
         postUrl="/api/ExecCSPLicense"
       >
         <Box sx={{ my: 2 }}>
           <Grid container spacing={2}>
             {/* Conditional Access Policy Selector */}
-            <Grid size={{ xs: 6 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <CippFormComponent
                 type="autoComplete"
                 creatable={false}
@@ -63,7 +73,9 @@ const Page = () => {
                 api={{
                   queryKey: `SKU-${tenantDomain}`,
                   url: "/api/ListCSPsku",
-                  labelField: (option) => `${option?.name[0]?.value} (${option?.sku})`,
+                  // Sherweb returns localised arrays ([{ value }]); External CSP returns plain strings.
+                  labelField: (option) =>
+                    `${option?.name?.[0]?.value ?? option?.name} (${option?.sku})`,
                   valueField: "sku",
 
                   addedField: {
@@ -83,7 +95,7 @@ const Page = () => {
                 sortOptions={true}
               />
             </Grid>
-            <Grid size={{ xs: 6 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <CippFormComponent
                 type="number"
                 label="Quantity of licenses to purchase."
@@ -118,7 +130,8 @@ const Page = () => {
                     {
                       label: "Description",
                       value: getCippFormatting(
-                        selectedSku?.addedFields?.description?.[0]?.value,
+                        selectedSku?.addedFields?.description?.[0]?.value ??
+                          selectedSku?.addedFields?.description,
                         "htmlDescription"
                       ),
                     },
@@ -129,7 +142,7 @@ const Page = () => {
             <Grid size={{ xs: 12 }}>
               <CippFormComponent
                 type="checkbox"
-                label="I understand that buy pressing submit this license will be purchased according to the terms and conditions for this SKU with Sherweb."
+                label={`I understand that buy pressing submit this license will be purchased according to the terms and conditions for this SKU with ${providerName}.`}
                 name="iagree"
                 formControl={formControl}
                 validators={{
@@ -144,6 +157,7 @@ const Page = () => {
   );
 };
 
-Page.getLayout = (page) => <DashboardLayout>{page}</DashboardLayout>;
+// An order is placed for one customer; there is no cross-tenant purchase.
+Page.getLayout = (page) => <DashboardLayout allTenantsSupport={false}>{page}</DashboardLayout>;
 
 export default Page;
